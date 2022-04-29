@@ -1,5 +1,16 @@
 #!/bin/bash
 
+IBM_CLOUD_KEY=$(echo "$1" | jq -r '.IBM_CLOUD_KEY')
+IBM_REGION=$(echo "$1" | jq -r '.IBM_REGION')
+IBM_ORG=$(echo "$1" | jq -r '.IBM_ORG')
+IBM_SPACE=$(echo "$1" | jq -r '.IBM_SPACE')
+IBM_GROUP=$(echo "$1" | jq -r '.IBM_GROUP')
+AWS_KEY_ID=$(echo "$1" | jq -r '.AWS_KEY_ID')
+AWS_KEY=$(echo "$1" | jq -r '.AWS_KEY')
+AWS_REGION=$(echo "$1" | jq -r '.AWS_REGION')
+NETWORK_ID=$(echo "$1" | jq -r '.NETWORK_ID')
+DNS_RECORD_ID=$(echo "$1" | jq -r '.DNS_RECORD_ID')
+
 VARS=("IBM_CLOUD_KEY" "IBM_REGION" "IBM_ORG" "IBM_SPACE" "IBM_GROUP" "AWS_KEY_ID" "AWS_KEY" "AWS_REGION" "NETWORK_ID" "DNS_RECORD_ID")
 for i in "${VARS[@]}"; do
     if [[ -z "${!i}" ]]; then

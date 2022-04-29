@@ -1,17 +1,27 @@
-FROM debian:bullseye-slim
+FROM openwhisk/dockerskeleton as wsk
 
-RUN apt-get -q update  \
-	&& apt-get upgrade -y  \
-	&& apt-get install -y --no-install-recommends apt-utils apt-transport-https ca-certificates \
-	curl gnupg lsb-release apt-transport-https zip unzip bzip2 xz-utils wget openssl locales groff less \
+FROM debian:buster-slim
+
+RUN apt-get -q update \
+	&& apt-get upgrade -y \
+	&& apt-get install -y --no-install-recommends apt-utils apt-transport-https ca-certificates sed openssh-client \
+	curl gnupg lsb-release apt-transport-https zip unzip bzip2 xz-utils wget openssl locales groff less g++ libc-dev \
+	python3-pip \
 	&& apt-get -q clean
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
 	&& echo "deb [arch="`dpkg --print-architecture`" signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian "`lsb_release -cs`" stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
 	&& apt-get update && apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io docker-compose-plugin \
-	&& apt-get -q clean  \
-	&& rm -rf /var/lib/apt/lists  \
-	&& locale-gen en_US.UTF-8
+	&& apt-get -q clean \
+	&& rm -rf /var/lib/apt/lists \
+	&& locale-gen en_US.UTF-8 
+RUN apt-get -q update && apt-get install -y --no-install-recommends python3-dev && apt-get -q clean \
+	&& rm -rf /var/lib/apt/lists
+RUN pip3 install --upgrade pip setuptools six \
+  && pip3 install --no-cache-dir Jinja2==2.11.1 gevent==1.3.6 flask==1.0.2 itsdangerous==1.1.0 MarkupSafe==1.1.1 Click==7.0 greenlet==0.4.15 MarkupSafe==1.1.1
+
 ENV LANG=en_US.UTF-8
+
+ENV FLASK_PROXY_PORT 8080
 
 ARG JQ_VERSION=1.6
 RUN wget --no-check-certificate https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64 -O /tmp/jq-linux64  \
@@ -44,11 +54,19 @@ RUN ln -s /usr/local/ibmcloud/bin/cfcli/cf /usr/local/Bluemix/bin/cfcli/cf  \
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip && ./aws/install && rm -rf aws awscliv2.zip
 
-COPY update_dns_record.sh /root/
+# RUN mkdir -p /actionProxy/owplatform
 
-RUN chmod +x /root/update_dns_record.sh
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
-CMD /root/update_dns_record.sh
+COPY --from=wsk /actionProxy/actionproxy.py /actionProxy/
+# COPY --from=wsk /actionProxy/owplatform/ /actionProxy/
+
+RUN mkdir -p /action
+
+COPY update_dns_record.sh /action/exec
+RUN chmod +x /action/exec
+
+CMD ["/bin/bash", "-c", "cd actionProxy && python -u actionproxy.py"]
 
 ENV TMPDIR=/tmp
 ENV HOME=/root
