@@ -3,7 +3,7 @@
 VARS=("IBM_CLOUD_KEY" "IBM_REGION" "IBM_ORG" "IBM_SPACE" "IBM_GROUP" "AWS_KEY_ID" "AWS_KEY" "AWS_REGION" "NETWORK_ID" "DNS_RECORD_ID")
 for i in "${VARS[@]}"; do
     if [[ -z "${!i}" ]]; then
-        echo "No ${i} var"
+        echo "{\"message\": \"No ${i} var\"}"
         exit 1
     fi
 done
@@ -32,10 +32,8 @@ echo "$AWS_CONF" > ~/.aws/config
 
 IP_ADDR=$(aws ec2 describe-network-interfaces --network-interface-id "$NETWORK_ID" --query "NetworkInterfaces[].Association.PublicIp" | jq -r '.[0]')
 
-echo "IP: $IP_ADDR"
-
 if [[ "$IP_ADDR" == "" ]]; then
-    echo "Can not obtain IP address of ALB ingress"
+    echo "{\"message\": \"Can not obtain IP address of ALB ingress\"}"
     exit 1
 fi
 
@@ -44,11 +42,13 @@ CUR_IP_ADDR=$(ibmcloud sl dns record-list ml-exchange.org --output JSON | jq -r 
 echo "CURRENT DNS IP: $CUR_IP_ADDR"
 
 if [[ "$CUR_IP_ADDR" == "" ]]; then
-    echo "Can not obtain DNS Record"
+    echo "{ \"message\": \"Can not obtain DNS Record\"}"
     exit 1
 fi
 
 if [[ "$CUR_IP_ADDR" != "$IP_ADDR" ]]; then
-    echo "update DNS record to $IP_ADDR"
+    echo "{\"message\": \"update DNS record to $IP_ADDR\"}"
     ibmcloud sl dns record-edit ml-exchange.org --by-id "$NETWORK_ID" --ttl 86400 --data "$IP_ADDR"
+else
+    echo "{\"message\": \"no change\"}"
 fi
