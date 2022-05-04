@@ -41,7 +41,7 @@ mkdir -p ~/.aws
 echo "$AWS_PROFILE" > ~/.aws/credentials
 echo "$AWS_CONF" > ~/.aws/config
 
-IP_ADDR=$(aws ec2 describe-network-interfaces --network-interface-id "$NETWORK_ID" --query "NetworkInterfaces[].Association.PublicIp" | jq -r '.[0]')
+IP_ADDR=$(aws ec2 describe-network-interfaces --no-paginate | jq -r '[.NetworkInterfaces[]|select(.Description|startswith("'"$NETWORK_ID"'"))]|.[0].Association.PublicIp')
 
 if [[ "$IP_ADDR" == "" ]]; then
     echo "{\"message\": \"Can not obtain IP address of ALB ingress\"}"
