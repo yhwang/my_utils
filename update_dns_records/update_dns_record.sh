@@ -59,7 +59,7 @@ fi
 
 if [[ "$CUR_IP_ADDR" != "$IP_ADDR" ]]; then
     echo "{\"message\": \"update DNS record to $IP_ADDR\"}"
-    ibmcloud sl dns record-edit ml-exchange.org --by-id "$NETWORK_ID" --ttl 86400 --data "$IP_ADDR"
+    ibmcloud sl dns record-edit ml-exchange.org --by-id "$DNS_RECORD_ID" --ttl 86400 --data "$IP_ADDR"
 else
     echo "{\"message\": \"no change\"}"
 fi
